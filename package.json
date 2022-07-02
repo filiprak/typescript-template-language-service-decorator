@@ -34,7 +34,6 @@
   },
   "scripts": {
     "prepare": "npm run compile",
-    "prepublish": "npm run compile",
     "compile": "tsc -p .",
     "watch:compile": "tsc --watch -p .",
     "e2e": "mocha e2e/tests/**/test.js --timeout 5000 --bail",
