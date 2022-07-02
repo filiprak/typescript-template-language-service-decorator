@@ -34,6 +34,26 @@ describe('Completions', () => {
         assert.strictEqual(completionsResponses[2].body[0].name, 'abcdefg');
     });
 
+    it('should return completions inside start-tagged, single line template', async () => {
+        const server = await getCompletionsInMockFile('const q = `<abcdefg`',
+            { offset: 12, line: 1 },
+            { offset: 14, line: 1 },
+            { offset: 19, line: 1 });
+        const completionsResponses = getResponsesOfType('completions', server);
+        assert.strictEqual(completionsResponses.length, 3);
+        for (const response of completionsResponses) {
+            assert.isTrue(response.success);
+            assert.strictEqual(response.body.length, 1);
+        }
+        assert.strictEqual(completionsResponses[0].body.length, 1);
+        assert.strictEqual(completionsResponses[0].body[0].name, '');
+        assert.strictEqual(completionsResponses[0].body[0].kindModifiers, 'echo');
+        assert.strictEqual(completionsResponses[1].body.length, 1);
+        assert.strictEqual(completionsResponses[1].body[0].name, '<a');
+        assert.strictEqual(completionsResponses[2].body.length, 1);
+        assert.strictEqual(completionsResponses[2].body[0].name, '<abcdef');
+    });
+
     it('should not return completions before tagged template', async () => {
         const server = await getCompletionsInMockFile('const q = test`abcdefg`',
             { offset: 1, line: 1 },
@@ -73,6 +93,20 @@ describe('Completions', () => {
         assert.strictEqual(completionsResponses[0].body[0].name, '');
         assert.strictEqual(completionsResponses[1].body.length, 1);
         assert.strictEqual(completionsResponses[1].body[0].name, 'cd');
+    });
+
+    it('should return completions for multiline strings and start-tagged templates', async () => {
+        const server = await getCompletionsInMockFile([
+            'const q = `   ',
+            '<di`',
+            'cdefg`'
+        ].join('\n'), { offset: 1, line: 2 }, { offset: 3, line: 2 });
+        const completionsResponses = getResponsesOfType('completions', server);
+        assert.strictEqual(completionsResponses.length, 2);
+        assert.strictEqual(completionsResponses[0].body.length, 1);
+        assert.strictEqual(completionsResponses[0].body[0].name, '');
+        assert.strictEqual(completionsResponses[1].body.length, 1);
+        assert.strictEqual(completionsResponses[1].body[0].name, '<d');
     });
 
     it('should ignore placeholders in string', async () => {

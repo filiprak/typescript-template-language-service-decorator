@@ -44,13 +44,46 @@ export function findAllNodes(
     return result;
 }
 
+function templateStartsWithText(
+    node: ts.Node,
+    tags: ReadonlyArray<string>
+): boolean {
+    if (!node) {
+        return false;
+    }
+    let text = node.getText() || '';
+    
+    if (text[0] === '`') {
+        text = text.slice(1, text.length);
+    }
+    
+    if (text[text.length] === '`') {
+        text = text.slice(0, text.length - 1);
+    }
+    text = text.trim();
+
+    return tags.some(tag => {
+        let prefix = tag.indexOf('starts:') === 0 ? tag.slice(7, tag.length) : '';
+
+        if (prefix) {
+            return text.indexOf(prefix) === 0;
+        } else {
+            return false;
+        }
+    });
+}
+
 export function isTaggedLiteral(
     typescript: typeof ts,
     node: ts.NoSubstitutionTemplateLiteral,
     tags: ReadonlyArray<string>
 ): boolean {
+
     if (!node || !node.parent) {
         return false;
+    }
+    if (templateStartsWithText(node, tags)) {
+        return true;
     }
     if (node.parent.kind !== typescript.SyntaxKind.TaggedTemplateExpression) {
         return false;
@@ -61,6 +94,11 @@ export function isTaggedLiteral(
 
 export function isTagged(node: ts.TaggedTemplateExpression, tags: ReadonlyArray<string>): boolean {
     const text = node.tag.getText();
+
+    if (templateStartsWithText(node, tags)) {
+        return true;
+    }
+
     return tags.some(tag =>
         text === tag
         || new RegExp(`$${escapeRegExp(tag)}\\s*^`).test(text)
